@@ -1,0 +1,344 @@
+<html>
+    <head>
+        {% load static %}
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title>User Login/Registration</title>
+        <link rel="icon" href="/static/images/mk.jpg">
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- Bootstrap CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6" crossorigin="anonymous">
+        <!-- Bootstrap JavaScript Bundle with Popper -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js" integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf" crossorigin="anonymous"></script>
+        <!-- my css -->
+        <link href="/static/css/style.css" rel="stylesheet">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+        <script>
+            $(document).ready(
+                function() {
+                    // set the date if coming back to form ..
+                    //let datestring = '{{ birthday }}';
+                    //$('#birthday').val(datestring);
+
+                    var CHARS_ONLY = /^[A-Za-z]+$/; // used for name validation
+
+                    // validate registration values on the client-side
+                    $('#register').click(
+                        function() {
+                            var errors = [];
+                            // check email 
+                            $.ajax({
+                                url: '/ajax/validate_email',
+                                data: {
+                                    'email': document.getElementById('email').value
+                                },
+                                dataType: 'json',
+                                success: function (data) {
+
+                                    // check email 
+                                    var email = document.getElementById("email").value;
+                                    if (!(/^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/.test(email))) {
+                                        errors.push("Please enter a valid email");
+                                    } 
+                                    if (data.email_exists) {
+                                        errors.push("Email already exists");
+                                    }
+
+                                    // check first name
+                                    var first_name = document.getElementById("first_name").value;
+                                    if (first_name.length<2) {
+                                        errors.push("First name must be at least 2 characters");
+                                    }
+
+                                    // check last name
+                                    var last_name = document.getElementById("last_name").value;
+                                    if (last_name.length<2) {
+                                        errors.push("Last name must be at least 2 characters");
+                                    }
+                                    if (!CHARS_ONLY.test(first_name) || !CHARS_ONLY.test(last_name)) {
+                                        errors.push("Names should contain characters only");
+                                    }
+                                    
+                                    // check passwords
+                                    var password = document.getElementById("password").value;
+                                    var confirm_password = document.getElementById("confirm_password").value;
+                                    if (password.length<9 || confirm_password.length<9) {
+                                        errors.push("Passord must be at least 8 characters");
+                                    }
+                                    if (password != confirm_password) {
+                                        errors.push("Passords must match");
+                                    }
+
+                                    // check birth date
+                                    var dob_in = document.getElementById("birthday").value;
+                                    if (dob_in == '') {
+                                        // if a bad entry was made using the date picker we get here ..
+                                        errors.push("Please enter a valid birth date")
+                                    } else {
+                                        var dob = new Date(dob_in);
+                                        // check dob .. must be at least 13 years old
+                                        var thirteen_years_ago = new Date(new Date().setFullYear(new Date().getFullYear() -15));
+                                        if (dob>thirteen_years_ago) {
+                                            errors.push("Must be at least 13 years old");
+                                        }
+                                    }
+                                
+                                    if (errors.length>0) {
+                                
+                                        var ul = document.getElementById("error-ul");
+                                        // clear previous errors
+                                        while (ul.firstChild) {
+                                            ul.removeChild(ul.lastChild);
+                                        }
+
+                                        for (var x=0; x<errors.length; x++) {
+                                            var REG_ERROR = "Registration: ";
+                                            var error = errors[x];
+                                            var li = document.createElement("li");
+                                            var att = document.createAttribute('class');
+                                            att.value = 'list-group-item list-group-item-danger';
+                                            li.setAttributeNode(att);
+                                            li.appendChild(document.createTextNode(REG_ERROR + error));
+                                            ul.appendChild(li);
+                                        }
+                                        // we had errors, do not submit
+                                        return false;
+                                    }
+                                    // no validation errors ..
+                                    document.forms["register_form"].submit();
+                                }
+                            });
+                        }
+                    );
+
+                    // validate login values on the client-side
+                    $('#login').click(
+                        function() {
+                            var errors = []
+                            
+                            // check email 
+                            var login_email = document.getElementById("login_email").value;
+                            if (!(/^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/.test(login_email))) {
+                                errors.push("Please enter a valid email");
+                            } 
+
+                            // check password
+                            var login_password = document.getElementById("login_password").value;
+                            if (login_password.length<9) {
+                                errors.push("Passord must be at least 8 characters");
+                            }
+
+                            if (errors.length>0) {
+                                
+                                var ul = document.getElementById("error-ul");
+                                // clear previous errors
+                                while (ul.firstChild) {
+                                    ul.removeChild(ul.lastChild);
+                                }
+
+                                for (var x=0; x<errors.length; x++) {
+                                    
+                                    var LOGIN_ERROR = "Login: ";
+                                    var error = errors[x];
+                                    var li = document.createElement("li");
+                                    var att = document.createAttribute('class');
+                                    att.value = 'list-group-item list-group-item-danger';
+                                    li.setAttributeNode(att);
+                                    li.appendChild(document.createTextNode(LOGIN_ERROR + error));
+                                    ul.appendChild(li);
+                                }
+                                // we had errors, do not submit
+                                return false;
+                            }
+                            // no validation errors ..
+                            document.forms["login_form"].submit();
+                        }
+                    );
+
+                    // when registration email field loses focus .. check it
+                    $('#email').focusout(
+                        function() {
+                            var errors = []
+                            // check email 
+                            var email     = document.getElementById("email").value;
+                            var email_msg = document.getElementById("email_msg");
+                            // clear any previous errors
+                            while (email_msg.firstChild) {
+                                email_msg.removeChild(email_msg.lastChild);
+                            }
+
+                            if (!(/^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/.test(email))) {
+
+                                var email_msg_p = document.createElement("p");
+                                var att = document.createAttribute('class');
+                                att.value = 'col-sm-3 list-group-item-danger msgs';
+                                email_msg_p.setAttributeNode(att);
+                                email_msg_p.appendChild(document.createTextNode("Please enter a valid email"));
+                                email_msg.appendChild(email_msg_p);
+
+                            } else {
+                                // email format was valid, we 
+                                $.ajax({
+                                url: '/ajax/validate_email',
+                                data: {
+                                    'email': document.getElementById('email').value
+                                },
+                                dataType: 'json',
+                                success: function (data) {
+
+                                    if (data.email_exists) {
+                                        var email_msg_p = document.createElement("p");
+                                        var att = document.createAttribute('class');
+                                        att.value = 'col-sm-3 list-group-item-danger msgs';
+                                        email_msg_p.setAttributeNode(att);
+                                        email_msg_p.appendChild(document.createTextNode("Email already exists, choose another"));
+                                        email_msg.appendChild(email_msg_p);
+                                    } else {
+                                        var email_msg_p = document.createElement("p");
+                                        var att = document.createAttribute('class');
+                                        att.value = "col-sm-3 list-group-item-success msgs";
+                                        email_msg_p.setAttributeNode(att);
+                                        email_msg_p.appendChild(document.createTextNode("Email is good! Not in system yet."));
+                                        email_msg.appendChild(email_msg_p);
+                                    }
+                                } // end successful ajax call
+                                }); // end ajax call
+                            } // end else valid email
+                        } // function end
+                    ); // end lose focus
+
+                    // login email lose focus check .. 
+                    $('#login_email').focusout(
+                        function() {
+                            var errors = []
+                            // check login email 
+                            var email     = document.getElementById("login_email").value;
+                            var email_msg = document.getElementById("login_email_msg");
+                            // clear any previous errors
+                            while (email_msg.firstChild) {
+                                email_msg.removeChild(email_msg.lastChild);
+                            }
+
+                            if (!(/^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/.test(email))) {
+
+                                var email_msg_p = document.createElement("p");
+                                var att = document.createAttribute('class');
+                                att.value = 'col-sm-3 list-group-item-danger msgs';
+                                email_msg_p.setAttributeNode(att);
+                                email_msg_p.appendChild(document.createTextNode("Please enter a valid email"));
+                                email_msg.appendChild(email_msg_p);
+
+                            } else {
+                                // email format was valid, we 
+                                $.ajax({
+                                url: '/ajax/validate_email',
+                                data: {
+                                    'email': document.getElementById('login_email').value
+                                },
+                                dataType: 'json',
+                                success: function (data) {
+
+                                    if (!data.email_exists) {
+                                        
+                                        var email_msg_p = document.createElement("p");
+                                        var att = document.createAttribute('class');
+                                        att.value = "col-sm-3 list-group-item-danger msgs";
+                                        email_msg_p.setAttributeNode(att);
+                                        email_msg_p.appendChild(document.createTextNode("Email entered does not exist in system"));
+                                        email_msg.appendChild(email_msg_p);
+                                    }
+                                } // end successful ajax call
+                                }); // end ajax call
+                            } // end else valid email
+                        }
+                    ); // end login email lose focus check
+                }
+            );
+        </script>
+    </head>
+    <body>
+        <div id="container">
+            <div class="row">
+                <ul class="list-group" name='error-ul' id='error-ul'> 
+                {% if messages %}  
+                        {% for message in messages %}    
+                            <li {% if message.tags %} class="{{ message.tags }} list-group-item list-group-item-danger"{% endif %}>{{ message }}</li>    
+                        {% endfor %}
+                {% endif %}
+                </ul>
+                <div class="col">
+                    <!-- Registration Form -->
+                    <h2 id="form-row-title">Registration</h2>
+                    <form method='post' name="register_form" id="register_form" action="/register_user" class="form-horizontal">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="first_name" class="control-label col-sm-2">First Name: </label>
+                        <div class="col-sm-6">
+                            <input type="text" class="form-control" id="first_name" name="first_name" value="{{ first_name }}">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="last_name" class="control-label col-sm-2">Last Name: </label>
+                        <div class="col-sm-6">
+                            <input type="text" class="form-control form-horizontal" id="last_name" name="last_name">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="network" class="control-label col-sm-2">Email: </label>
+                        <div class="col-sm-6">
+                            <input type="email" class="form-control" id="email" name="email">
+                        </div>
+                        <div id="email_msg" name="email_msg"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="birthday" class="control-label col-sm-2">Birthday: </label>
+                        <div class="col-sm-6">
+                            <input type="date" class="form-control" id="birthday" name="birthday">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="password" class="control-label col-sm-2">Password: </label>
+                        <div class="col-sm-6">
+                            <input type="password" class="form-control" id="password" name="password">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirm_password" class="control-label col-sm-2">Confirm PW: </label>
+                        <div class="col-sm-6">
+                            <input type="password" class="form-control" id="confirm_password" name="confirm_password">
+                        </div>
+                    </div>
+                    <input type="button" id='register' name='register' class="btn btn-primary form-button-row" value="Register"/>
+                    </form>
+                </div>
+
+                <div class="col">
+                    <!-- Login Form -->
+                    <h2 id="form-row-title">Login</h2>
+                    <form method='post' action="/process_login" id="login_form" name="login_form" class="form-horizontal">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="login_email" class="control-label col-sm-2">Email: </label>
+                        <div class="col-sm-6">
+                            <input type="email" class="form-control" id="login_email" name="login_email">
+                        </div>
+                        <div id="login_email_msg" name="login_email_msg"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="login_password" class="control-label col-sm-2">Password: </label>
+                        <div class="col-sm-6">
+                            <input type="password" class="form-control" id="login_password" name="login_password">
+                        </div>
+                    </div>
+                    <input type="button" id="login" name="login" class="btn btn-primary form-button-row" value="Login"/>
+                    </form>
+                </div>
+                
+            </div>
+        </div>
+
+    </body>
+</html>
